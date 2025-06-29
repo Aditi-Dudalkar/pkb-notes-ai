@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+strawberry-graphql
+openai
+python-dotenv
+sqlalchemy
+databases
+sqlite-utils
