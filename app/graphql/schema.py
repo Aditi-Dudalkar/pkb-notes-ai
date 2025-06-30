@@ -66,4 +66,38 @@ class Mutation:
             updated_at=str(row["updated_at"]),
         )
 
+    @strawberry.mutation
+    async def update_note(self, id: int, title: str, content: str) -> Optional[NoteType]:
+        get_query = "SELECT * FROM notes WHERE id = :id"
+        existing = await database.fetch_one(get_query, {"id": id})
+        if not existing:
+            return None
+
+        update_query = """
+            UPDATE notes
+            SET title = :title, content = :content, updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id
+        """
+        await database.execute(update_query, {"id": id, "title": title, "content": content})
+
+        updated = await database.fetch_one(get_query, {"id": id})
+        return NoteType(
+            id=updated["id"],
+            title=updated["title"],
+            content=updated["content"],
+            created_at=str(updated["created_at"]),
+            updated_at=str(updated["updated_at"]),
+        )
+        
+    @strawberry.mutation
+    async def delete_note(self, id: int) -> bool:
+        get_query = "SELECT * FROM notes WHERE id = :id"
+        existing = await database.fetch_one(get_query, {"id": id})
+        if not existing:
+            return False
+
+        delete_query = "DELETE FROM notes WHERE id = :id"
+        await database.execute(delete_query, {"id": id})
+        return True
+
 schema = strawberry.Schema(query=Query, mutation=Mutation)
