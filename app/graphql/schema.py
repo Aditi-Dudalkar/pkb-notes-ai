@@ -15,9 +15,30 @@ class NoteType:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def all_notes(self) -> List[NoteType]:
-        query = "SELECT * FROM notes ORDER BY created_at DESC"
-        rows = await database.fetch_all(query=query)
+    async def all_notes(
+        self,
+        keyword: Optional[str] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None
+    ) -> List[NoteType]:
+        filters = []
+        values = {}
+        
+        if keyword:
+            filters.append("(title LIKE :kw OR content LIKE :kw)")
+            values["kw"] = f"%{keyword}%"
+            
+        if from_date:
+            filters.append("created_at >= :from_date")
+            values["from_date"] = from_date
+            
+        if to_date:
+            filters.append("created_at <= :to_date")
+            values["to_date"] = to_date
+            
+        filter_clause = "WHERE " + " AND ".join(filters) if filters else ""
+        query = f"SELECT * FROM notes {filter_clause} ORDER BY created_at DESC"
+        rows = await database.fetch_all(query=query, values=values)
         return [
             NoteType(
                 id=row["id"],
